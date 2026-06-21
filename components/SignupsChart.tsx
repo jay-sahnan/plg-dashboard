@@ -31,6 +31,7 @@ import {
 } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
 import { useMetrics } from "@/lib/hooks/useMetrics";
+import { scaleGoalToGrain } from "@/lib/goalsConfig";
 
 type Row = { PERIOD: string; ICP_SCORE: string; SIGNUPS: number };
 type Datum = Record<string, number | string>;
@@ -86,8 +87,9 @@ export function SignupsChart() {
     selectedRange,
   );
   const lastTier = tiers[tiers.length - 1];
-  const goalLine = goals.signups ? (
-    <ReferenceLine y={goals.signups} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
+  const signupGoal = goals.signups ? scaleGoalToGrain(goals.signups, grain) : 0;
+  const goalLine = signupGoal ? (
+    <ReferenceLine y={signupGoal} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
   ) : null;
 
   return (
@@ -125,12 +127,12 @@ export function SignupsChart() {
                 {icpBreakdown ? (
                   tiers.map((t) => (
                     <Bar key={t} dataKey={t} name={t} stackId="icp" fill={ICP_COLORS[t]} radius={t === lastTier ? [3, 3, 0, 0] : undefined} cursor="pointer">
-                      {t === lastTier && <LabelList dataKey="total" content={goalAwareLabel(goals.signups, kfmt, { offset: 8, fontWeight: 500 })} />}
+                      {t === lastTier && <LabelList dataKey="total" content={goalAwareLabel(signupGoal || undefined, kfmt, { offset: 8, fontWeight: 500 })} />}
                     </Bar>
                   ))
                 ) : (
                   <Bar dataKey="total" name="Signups" fill="var(--color-primary)" radius={[3, 3, 0, 0]} cursor="pointer">
-                    <LabelList dataKey="total" content={goalAwareLabel(goals.signups, kfmt, { offset: 8, fontWeight: 500 })} />
+                    <LabelList dataKey="total" content={goalAwareLabel(signupGoal || undefined, kfmt, { offset: 8, fontWeight: 500 })} />
                   </Bar>
                 )}
               </BarChart>

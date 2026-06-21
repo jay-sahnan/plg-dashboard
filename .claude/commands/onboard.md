@@ -159,6 +159,30 @@ signup A/B/C.
   from `components/ChartControls.tsx`, `components/DashboardFilters.tsx`, and the
   toolbar in `components/Dashboard.tsx`, so there's no filter they can't populate.
 
+### Goal model decision
+
+Ask how the team sets targets, then wire `lib/goalsConfig.ts` to match — **decide
+this here, don't add cadence/semantics toggles to the Settings page.** Different orgs
+plan differently and exposing every model at runtime makes the UI confusing; the
+Settings page should stay "just type the numbers." Two parts:
+
+- **Cadence** — set `GOAL_CADENCE` in `lib/goalsConfig.ts` to `"week"`, `"month"`,
+  or `"quarter"` (e.g. quarterly OKRs → `"quarter"`). One constant drives the goal
+  labels (`/quarter`) *and* how the dashed goal line scales to the chart's Group-by
+  grain via `scaleGoalToGrain` (a per-quarter target shows correctly on a weekly
+  chart). Rate goals (activation / conversion %) are cadence-independent and ignore it.
+- **Semantics — incremental vs cumulative** (a code-path choice; pick one):
+  - *Incremental* (the shipped default): a flat target per cadence — "add 500
+    signups / quarter". The goal line is a flat `ReferenceLine` at the grain-scaled
+    value. Nothing to change.
+  - *Cumulative* — "reach 10,000 total customers". The target is a single number to
+    hit, not per-bucket. Swap the per-bucket `ReferenceLine` for a single target line
+    (or compute a running-total series and ramp the target across periods). Wire this
+    only if the team plans cumulatively; otherwise leave the default.
+
+The Settings modal reads `GOAL_METRICS` and just collects values, so it picks up the
+cadence labels automatically — no UI changes needed.
+
 ---
 
 ## Phase 2 — Wire each kept chart to real data

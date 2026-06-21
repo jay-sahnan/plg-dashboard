@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
-import { GOAL_METRICS } from "@/lib/goalsConfig";
+import { GOAL_METRICS, GOAL_CADENCE } from "@/lib/goalsConfig";
 import { useFilters } from "@/components/DashboardFilters";
 import { cn } from "@/lib/utils";
 import { saveGoals, type SaveState } from "@/app/settings/actions";
@@ -59,7 +59,7 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
         <header className="flex items-start justify-between gap-4 border-b border-border-faint px-6 py-4">
           <div>
             <h2 className="type-large text-text-primary">Goals</h2>
-            <p className="mt-0.5 type-caption text-text-tertiary">Per-period targets · saved locally to goals.json</p>
+            <p className="mt-0.5 type-caption text-text-tertiary">Per-{GOAL_CADENCE} targets · saved locally to goals.json</p>
           </div>
           <button
             onClick={onClose}

@@ -22,6 +22,7 @@ import { ChartMsg } from "@/components/ChartMessage";
 import { ICP_COLORS, ICP_TIERS, ChartType, ChartTypeToggle, currentBucketStart, fmtPeriod, goalAwareLabel, useDragSelect, usePulse } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
 import { useMetrics } from "@/lib/hooks/useMetrics";
+import { scaleGoalToGrain } from "@/lib/goalsConfig";
 
 type Row = { PERIOD: string; PLAN_TIER: string; ICP_SCORE: string; CHURNED: number };
 type Datum = Record<string, number | string>;
@@ -92,8 +93,9 @@ export function ChurnChart() {
     </>
   );
 
-  const goalLine = goals.churn ? (
-    <ReferenceLine y={goals.churn} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
+  const churnGoal = goals.churn ? scaleGoalToGrain(goals.churn, grain) : 0;
+  const goalLine = churnGoal ? (
+    <ReferenceLine y={churnGoal} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
   ) : null;
 
   return (
@@ -128,7 +130,7 @@ export function ChurnChart() {
                 {goalLine}
                 {series.map((s) => (
                   <Bar key={s.key} dataKey={s.key} name={s.name} stackId="churn" fill={s.color} radius={s.key === lastKey ? [3, 3, 0, 0] : undefined} cursor="pointer">
-                    {s.key === lastKey && <LabelList dataKey="total" content={goalAwareLabel(goals.churn, undefined, { offset: 8, fontWeight: 500 })} />}
+                    {s.key === lastKey && <LabelList dataKey="total" content={goalAwareLabel(churnGoal || undefined, undefined, { offset: 8, fontWeight: 500 })} />}
                   </Bar>
                 ))}
               </BarChart>

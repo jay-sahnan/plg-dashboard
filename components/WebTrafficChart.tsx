@@ -20,6 +20,7 @@ import { ChartMsg } from "@/components/ChartMessage";
 import { ChartType, ChartTypeToggle, currentBucketStart, fmtPeriod, useDragSelect } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
 import { useMetrics } from "@/lib/hooks/useMetrics";
+import { scaleGoalToGrain } from "@/lib/goalsConfig";
 
 type Row = { period: string; pageviews: number; visitors: number };
 type Datum = { period: string; ym: string; pageviews: number; visitors: number };
@@ -54,8 +55,9 @@ export function WebTrafficChart() {
     </>
   );
 
-  const goalLine = goals.visitors ? (
-    <ReferenceLine y={goals.visitors} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
+  const visitorGoal = goals.visitors ? scaleGoalToGrain(goals.visitors, grain) : 0;
+  const goalLine = visitorGoal ? (
+    <ReferenceLine y={visitorGoal} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
   ) : null;
 
   return (
