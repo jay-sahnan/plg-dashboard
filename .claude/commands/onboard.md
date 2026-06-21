@@ -68,6 +68,14 @@ field names it actually reads before writing a query.
 
 ### Output contracts (field names matter — case-sensitive)
 
+Every route returns `{ rows: [...], meta }`. The `meta` (`SourceMeta` from
+`lib/sources/meta.ts`) powers the flip-to-provenance back of each chart card — the
+SQL / PostHog insight / dashboard link plus last-pull time and success/failure.
+Wrap your real data call in
+`instrument("<source>", async () => ({ rows, query, insight, dashboardUrl, note }))`;
+it stamps `fetchedAt` / `durationMs` / `ok` / `error` automatically. The row shapes
+below are unchanged.
+
 | Route | Row shape |
 |---|---|
 | `/api/metrics?section=signups` | `{ PERIOD, ICP_SCORE, SIGNUPS }` |
@@ -130,7 +138,9 @@ For each **removed** chart, delete in this order, then run `npm run typecheck`:
   `lib/goalsConfig.ts`.
 
 Adding a brand-new chart not in the template is larger work — offer to scaffold one
-by cloning the closest existing chart component, but flag it as such.
+by cloning the closest existing chart component, but flag it as such. Wrap the new
+chart's card in `<ProvenanceCard meta={meta}>` (not plain `<Card>`) and read `meta`
+from `useMetrics`, so it gets flip-to-provenance for free like the others.
 
 ### ICP-score breakdown decision
 
@@ -199,6 +209,11 @@ This is the core. Run this loop **per chart**:
    exact contract shape, plus a commented Postgres variant, plus the route-wiring
    snippet). It mirrors how `lib/goalsStore.ts` isolates IO; `app/api/hex-embed/route.ts`
    is a good example of an env-guarded external fetch.
+7b. **Populate provenance.** Wrap the query in `instrument()` (see the contract
+   note above) and pass the real `query` string you wrote (SQL sources),
+   `insight: { name, url }` (PostHog), or `dashboardUrl` (Hex/BI). This is exactly
+   what the card shows when flipped — keep it accurate so the back reflects the live
+   source and last-pull status.
 8. **Verify** — hit the route, confirm real rows, confirm the chart renders. Only
    then move to the next chart. Keep the mock fn until verified.
 
