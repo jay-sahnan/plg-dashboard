@@ -1,0 +1,159 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { ChartMsg } from "@/components/ChartMessage";
+import {
+  ICP_COLORS,
+  ICP_TIERS,
+  ChartType,
+  ChartTypeToggle,
+  currentBucketStart,
+  fmtPeriod,
+  goalAwareLabel,
+  useDragSelect,
+  usePulse,
+} from "@/components/ChartControls";
+import { useFilters } from "@/components/DashboardFilters";
+import { useMetrics } from "@/lib/hooks/useMetrics";
+
+type Row = { PERIOD: string; ICP_SCORE: string; SIGNUPS: number };
+type Datum = Record<string, number | string>;
+
+const kfmt = (v: unknown) => {
+  const n = Number(v);
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`;
+};
+
+export function SignupsChart() {
+  const {
+    start,
+    grain,
+    excludeCurrent,
+    icp,
+    icpBreakdown,
+    version,
+    goals,
+    selectedMonth,
+    selectedRange,
+    onSelectMonth,
+    onSelectRange,
+  } = useFilters();
+  const [type, setType] = useState<ChartType>("bar");
+  const pulse = usePulse(`${icp.join(",")}|${excludeCurrent}|${start}|${grain}|${version}`);
+  const { rows: raw, error } = useMetrics<Row>(
+    `/api/metrics?section=signups&start=${start}&grain=${grain}`,
+    version,
+  );
+
+  const tiers = ICP_TIERS.filter((t) => icp.includes(t));
+  const { data, total } = useMemo(() => {
+    if (!raw) return { data: [] as Datum[], total: 0 };
+    const cutoff = currentBucketStart(grain);
+    const byPeriod = new Map<string, Datum>();
+    let total = 0;
+    for (const r of raw) {
+      if (!icp.includes(r.ICP_SCORE)) continue;
+      if (excludeCurrent && r.PERIOD >= cutoff) continue;
+      const p = byPeriod.get(r.PERIOD) ?? { period: fmtPeriod(r.PERIOD, grain), ym: r.PERIOD.slice(0, 7), total: 0 };
+      p[r.ICP_SCORE] = Number(r.SIGNUPS);
+      p.total = Number(p.total ?? 0) + Number(r.SIGNUPS);
+      total += Number(r.SIGNUPS);
+      byPeriod.set(r.PERIOD, p);
+    }
+    return { data: [...byPeriod.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v), total };
+  }, [raw, icp, excludeCurrent, grain]);
+
+  const { dragProps, refArea } = useDragSelect(
+    data as { period: string; ym: string }[],
+    onSelectMonth,
+    onSelectRange,
+    selectedRange,
+  );
+  const lastTier = tiers[tiers.length - 1];
+  const goalLine = goals.signups ? (
+    <ReferenceLine y={goals.signups} stroke="var(--color-text-secondary)" strokeDasharray="5 4" strokeWidth={1.5} />
+  ) : null;
+
+  return (
+    <Card>
+      <CardHeader
+        title="Signups"
+        subtitle={
+          selectedMonth
+            ? `Accounts by account tier · timeline filtered to ${selectedMonth}`
+            : "Monthly accounts by account tier, spam-filtered · click a month to filter the timeline →"
+        }
+        right={
+          <div className="flex items-center gap-3">
+            {raw ? <span className="type-caption text-text-tertiary">{total.toLocaleString()} in view</span> : null}
+            <ChartTypeToggle value={type} onChange={setType} />
+          </div>
+        }
+      />
+      <div className={`px-5 py-4 transition-opacity duration-200 ${pulse ? "opacity-30" : ""}`} style={{ height: 360 }} role="img" aria-label="Signups by account tier over time">
+        {error ? (
+          <ChartMsg icon="error" text={`Query failed: ${error}`} />
+        ) : !raw ? (
+          <ChartMsg icon="load" />
+        ) : (
+          <ResponsiveContainer width="100%" height="100%" debounce={150}>
+            {type === "bar" ? (
+              <BarChart data={data} margin={{ top: 8, right: 24, bottom: 0, left: -8 }} {...dragProps} style={{ cursor: "crosshair" }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-faint)" vertical={false} />
+                <XAxis dataKey="period" tick={{ fontSize: 12, fill: "var(--color-text-tertiary)" }} stroke="var(--color-border-medium)" />
+                <YAxis tick={{ fontSize: 12, fill: "var(--color-text-tertiary)" }} stroke="var(--color-border-medium)" tickFormatter={kfmt} />
+                <Tooltip contentStyle={{ background: "var(--color-bg-top)", border: "1px solid var(--color-border-medium)", borderRadius: 6, fontSize: 13 }} labelStyle={{ color: "var(--color-text-primary)", fontWeight: 500 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {refArea}
+                {goalLine}
+                {icpBreakdown ? (
+                  tiers.map((t) => (
+                    <Bar key={t} dataKey={t} name={t} stackId="icp" fill={ICP_COLORS[t]} radius={t === lastTier ? [3, 3, 0, 0] : undefined} cursor="pointer">
+                      {t === lastTier && <LabelList dataKey="total" content={goalAwareLabel(goals.signups, kfmt, { offset: 8, fontWeight: 500 })} />}
+                    </Bar>
+                  ))
+                ) : (
+                  <Bar dataKey="total" name="Signups" fill="var(--color-primary)" radius={[3, 3, 0, 0]} cursor="pointer">
+                    <LabelList dataKey="total" content={goalAwareLabel(goals.signups, kfmt, { offset: 8, fontWeight: 500 })} />
+                  </Bar>
+                )}
+              </BarChart>
+            ) : (
+              <LineChart data={data} margin={{ top: 8, right: 24, bottom: 0, left: -8 }} {...dragProps} style={{ cursor: "crosshair" }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-faint)" vertical={false} />
+                <XAxis dataKey="period" tick={{ fontSize: 12, fill: "var(--color-text-tertiary)" }} stroke="var(--color-border-medium)" />
+                <YAxis tick={{ fontSize: 12, fill: "var(--color-text-tertiary)" }} stroke="var(--color-border-medium)" tickFormatter={kfmt} />
+                <Tooltip contentStyle={{ background: "var(--color-bg-top)", border: "1px solid var(--color-border-medium)", borderRadius: 6, fontSize: 13 }} labelStyle={{ color: "var(--color-text-primary)", fontWeight: 500 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                {refArea}
+                {goalLine}
+                {icpBreakdown ? (
+                  tiers.map((t) => (
+                    <Line key={t} type="monotone" dataKey={t} name={t} stroke={ICP_COLORS[t]} strokeWidth={2.5} dot={false} />
+                  ))
+                ) : (
+                  <Line type="monotone" dataKey="total" name="Signups" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 3 }} />
+                )}
+              </LineChart>
+            )}
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  );
+}
