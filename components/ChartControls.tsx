@@ -49,8 +49,13 @@ export function goalAwareLabel(
     const value = props.value;
     if (typeof value !== "number" && typeof value !== "string") return null;
     const vb = (props.viewBox ?? {}) as { x?: number; y?: number; width?: number };
-    const x = Number(vb.x), y = Number(vb.y), w = Number(vb.width);
-    let ty = y - gap; // text baseline, just above the bar/stack top
+    // Bars expose a full viewBox (x/y/width); line points only carry x/y (no
+    // width), sometimes at the top level — fall back so this works for both.
+    const p = props as { x?: number; y?: number };
+    const x = Number.isFinite(Number(vb.x)) ? Number(vb.x) : Number(p.x);
+    const y = Number.isFinite(Number(vb.y)) ? Number(vb.y) : Number(p.y);
+    const w = Number.isFinite(Number(vb.width)) ? Number(vb.width) : 0;
+    let ty = y - gap; // text baseline, just above the bar top / line point
     if (goal && yScale) {
       const goalPx = Number(yScale(goal));
       // text box spans roughly [ty - FONT, ty]; if the line cuts through it, lift clear

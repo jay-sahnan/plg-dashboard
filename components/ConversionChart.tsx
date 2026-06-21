@@ -151,7 +151,7 @@ export function ConversionChart() {
         ) : (
           <ResponsiveContainer width="100%" height="100%" debounce={150}>
             {type === "line" ? (
-              <LineChart data={chartData} margin={{ top: 16, right: 24, bottom: 0, left: -8 }} {...dragProps} style={{ cursor: "crosshair" }}>
+              <LineChart data={chartData} margin={{ top: 24, right: 24, bottom: 0, left: -8 }} {...dragProps} style={{ cursor: "crosshair" }}>
                 {axes}
                 {refArea}
                 {goalLine}
@@ -161,7 +161,7 @@ export function ConversionChart() {
                   ))
                 ) : (
                   <Line type="monotone" dataKey={mkey} name={seriesName} stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 3 }}>
-                    <LabelList dataKey={mkey} position="top" offset={10} formatter={pctLabel} style={{ fontSize: 11, fill: "var(--color-text-secondary)", fontWeight: 500 }} />
+                    <LabelList dataKey={mkey} content={goalAwareLabel(goals.conversion, pctLabel, { offset: 12, fontWeight: 500 })} />
                   </Line>
                 )}
               </LineChart>
