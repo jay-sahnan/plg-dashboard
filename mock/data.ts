@@ -49,13 +49,17 @@ JOIN accounts a ON a.id = sub.account_id
 WHERE sub.canceled_at IS NOT NULL AND sub.canceled_at >= :start
 GROUP BY 1, 2, 3
 ORDER BY 1;`,
-  traffic: `SELECT date_trunc('month', pv.ts)               AS period,
-       count(DISTINCT pv.visitor_id)             AS visitors,
-       count(*)                                  AS pageviews
-FROM pageviews pv
-WHERE pv.ts >= :start
-GROUP BY 1
-ORDER BY 1;`,
+  // PostHog HogQL (ClickHouse SQL dialect) — runs as a SQL insight over the
+  // `events` table. https://posthog.com/docs/hogql
+  traffic: `SELECT
+    toStartOfMonth(timestamp) AS period,
+    uniq(person_id)           AS visitors,   -- unique visitors
+    count()                   AS pageviews
+FROM events
+WHERE event = '$pageview'
+  AND timestamp >= {filters.dateRange.from}
+GROUP BY period
+ORDER BY period`,
   referrers: `SELECT COALESCE(NULLIF(s.referrer, ''), '$direct') AS referrer,
        count(DISTINCT s.visitor_id)              AS visitors
 FROM sessions s
