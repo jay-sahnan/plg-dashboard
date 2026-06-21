@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ProvenanceEye } from "@/components/ui/ProvenanceCard";
 
 export function Card({
   className,
@@ -36,7 +37,12 @@ export function CardHeader({
           <p className="type-caption mt-1 text-text-tertiary">{subtitle}</p>
         ) : null}
       </div>
-      {right}
+      <div className="flex items-center gap-2">
+        {right}
+        <span data-provenance-eye-anchor>
+          <ProvenanceEye />
+        </span>
+      </div>
     </div>
   );
 }
