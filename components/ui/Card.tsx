@@ -30,14 +30,14 @@ export function CardHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border-faint px-5 py-4">
-      <div>
+    <div className="flex items-start justify-between gap-x-4 gap-y-2 border-b border-border-faint px-5 py-4">
+      <div className="min-w-0">
         <h2 className="type-header text-text-primary">{title}</h2>
         {subtitle ? (
           <p className="type-caption mt-1 text-text-tertiary">{subtitle}</p>
         ) : null}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {right}
         <span data-provenance-eye-anchor>
           <ProvenanceEye />
