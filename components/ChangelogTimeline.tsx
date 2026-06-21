@@ -7,6 +7,7 @@ import changelog from "@/data/changelog.json";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { useFilters } from "@/components/DashboardFilters";
+import { eventKey } from "@/lib/eventKey";
 import { cn } from "@/lib/utils";
 
 type Event = {
@@ -98,13 +99,13 @@ export function ChangelogTimeline({
         fetch("/api/categorize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: events.map((e, i) => ({ i, title: e.title, src: e.src, hint: e.cat })) }),
+          body: JSON.stringify({ items: events.map((e) => ({ key: eventKey(e), title: e.title, src: e.src, hint: e.cat })) }),
         }),
         new Promise((r) => setTimeout(r, 700)),
       ]);
       const d = await res.json();
       if (d.cats && Object.keys(d.cats).length) {
-        setEvents((prev) => prev.map((e, i) => ({ ...e, category: d.cats[String(i)] ?? e.category })));
+        setEvents((prev) => prev.map((e) => ({ ...e, category: d.cats[eventKey(e)] ?? e.category })));
       }
       // Flip to the "re-categorise" state once the pass has run, even if the
       // demo endpoint returned no changes — signals the action completed.
@@ -121,11 +122,13 @@ export function ChangelogTimeline({
   useEffect(() => {
     let alive = true;
     (async () => {
-      const [cl, soc] = await Promise.all([
+      const [cl, soc, cat] = await Promise.all([
         fetch("/api/changelog", { cache: "no-store" }).then((r) => r.json()).catch(() => ({ events: [] })),
         fetch("/api/social?metric=mentions&start=2025-04-01", { cache: "no-store" }).then((r) => r.json()).catch(() => ({ rows: [] })),
+        fetch("/api/categorize", { cache: "no-store" }).then((r) => r.json()).catch(() => ({ cats: {} })),
       ]);
       if (!alive) return;
+      const storedCats = (cat?.cats ?? {}) as Record<string, string>;
       const clEvents = Array.isArray(cl.events) ? (cl.events as Event[]) : [];
       const socEvents = ((soc.rows ?? []) as Array<Record<string, unknown>>).map((m) => ({
         date: String(m.timestamp ?? "").slice(0, 10),
@@ -136,14 +139,14 @@ export function ChangelogTimeline({
         url: m.url ? String(m.url) : undefined,
       })) as Event[];
 
+      // Persisted AI categories (by event key) win; everything else gets the fast
+      // local heuristic — so a refresh keeps prior AI categories without re-calling.
       const merged = [...(changelog.events as Event[]), ...clEvents, ...socEvents].map((e) => ({
         ...e,
-        category: heuristicCategory(e),
+        category: storedCats[eventKey(e)] ?? heuristicCategory(e),
       }));
-      // Instant render with fast heuristic categories. AI refinement is on demand
-      // via the "Categorise with AI" button (see runCategorise).
       setEvents(merged);
-      setCategorised(false);
+      setCategorised(Object.keys(storedCats).length > 0);
     })();
     return () => {
       alive = false;

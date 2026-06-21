@@ -31,6 +31,9 @@ pnpm-lock.yaml
 # user-set goals (written by the Settings page)
 goals.json
 
+# AI-assigned timeline categories (written by /api/categorize)
+categories.json
+
 # DX-audit scratch copies
 dx-audit-tmp
 
