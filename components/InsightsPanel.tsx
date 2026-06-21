@@ -100,9 +100,9 @@ export function InsightsPanel({
                 submit();
               }
             }}
-            rows={1}
+            rows={2}
             placeholder="Steer the analysis (optional)… e.g. focus on what drove the conversion dip"
-            className="max-h-28 min-h-[38px] flex-1 resize-none rounded-md border border-border-solid bg-bg-main px-3 py-2 type-body text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
+            className="max-h-28 min-h-[60px] flex-1 resize-none rounded-md border border-border-solid bg-bg-main px-3 py-2 type-body leading-snug text-text-primary placeholder:text-text-tertiary focus:border-primary focus:outline-none"
           />
           <button
             onClick={submit}

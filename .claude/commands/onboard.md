@@ -241,10 +241,16 @@ each into that shape inside `app/api/changelog/route.ts`:
   `LINEAR_API_KEY` in env, GraphQL query for completed/shipped issues → events.
 - **GitHub releases** — `GITHUB_TOKEN` + `GITHUB_REPO`, pull releases (or merged
   PRs) via REST/GraphQL → events.
-- **AI Insights** — `components/InsightsPanel.tsx` + `/api/insights` +
-  `/api/categorize` are stubbed (canned text, no Anthropic call). If they want real
-  analysis: set `ANTHROPIC_API_KEY` and restore the real Claude calls. Use the
-  `claude-api` skill for current model IDs; default to the latest Claude model.
+- **AI Insights & categorisation** — the Claude calls are **already wired and
+  env-gated**: `/api/insights` (`components/InsightsPanel.tsx`) and `/api/categorize`
+  (the signals-timeline "Categorise with AI" button) call Claude via plain HTTPS only
+  when `ANTHROPIC_API_KEY` is set, and otherwise fall back to a deterministic
+  analysis / local heuristic. **So making them real is just: set `ANTHROPIC_API_KEY`
+  in `.env.local`.** Insights is grounded on real computed figures (Opus, narrative);
+  categorize uses Haiku (cheap bulk labelling) and persists results by event key in
+  `categories.json` (swap that store for a DB/KV on serverless, like goals). To change
+  models or prompts, edit the `MODEL` const / `system` string in each route — consult
+  the `claude-api` skill for current model IDs; default to the latest Claude model.
 - **Browserbase (optional / experimental — clearly flag it).** To auto-discover
   external signals (competitor changelogs, news, brand mentions), use a Browserbase
   session to periodically visit pages, extract what changed, and feed entries into
