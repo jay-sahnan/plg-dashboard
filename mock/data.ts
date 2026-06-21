@@ -9,6 +9,71 @@
  * real lib/* integrations, and wire the API routes back to them. (See README.)
  */
 
+// DEMO provenance — example SQL shown on the back of each card until a real source
+// is wired (onboard replaces these in app/api/*/route.ts). Purely illustrative; the
+// output aliases match the case-sensitive contract field names in onboard.md.
+export const EXAMPLE_SQL: Record<string, string> = {
+  signups: `SELECT date_trunc('month', u.created_at)         AS PERIOD,
+       COALESCE(NULLIF(u.icp_score, ''), 'Unscored') AS ICP_SCORE,
+       count(*)                                  AS SIGNUPS
+FROM users u
+WHERE u.created_at >= :start
+GROUP BY 1, 2
+ORDER BY 1;`,
+  engagement: `SELECT date_trunc('month', o.created_at)         AS PERIOD,
+       COALESCE(NULLIF(o.icp_score, ''), 'Unscored') AS ICP_SCORE,
+       count(DISTINCT o.id)                       AS ORGS,
+       count(DISTINCT o.id) FILTER (WHERE e.activated_24h) AS W24H_5
+FROM organizations o
+LEFT JOIN engagement e ON e.org_id = o.id
+WHERE o.created_at >= :start
+GROUP BY 1, 2
+ORDER BY 1;`,
+  conversion: `SELECT date_trunc('month', s.created_at)         AS PERIOD,
+       COALESCE(NULLIF(s.icp_score, ''), 'Unscored') AS ICP_SCORE,
+       count(*)                                   AS SIGNUPS,
+       count(*) FILTER (WHERE sub.id IS NOT NULL)  AS PAID_WITHIN_WINDOW
+FROM signups s
+LEFT JOIN subscriptions sub
+  ON sub.account_id = s.account_id
+ AND sub.started_at <= s.created_at + INTERVAL '30 days'
+WHERE s.created_at >= :start
+GROUP BY 1, 2
+ORDER BY 1;`,
+  churn: `SELECT date_trunc('month', sub.canceled_at)      AS PERIOD,
+       sub.plan_tier                              AS PLAN_TIER,
+       COALESCE(NULLIF(a.icp_score, ''), 'Unscored') AS ICP_SCORE,
+       count(*)                                   AS CHURNED
+FROM subscriptions sub
+JOIN accounts a ON a.id = sub.account_id
+WHERE sub.canceled_at IS NOT NULL AND sub.canceled_at >= :start
+GROUP BY 1, 2, 3
+ORDER BY 1;`,
+  traffic: `SELECT date_trunc('month', pv.ts)               AS period,
+       count(DISTINCT pv.visitor_id)             AS visitors,
+       count(*)                                  AS pageviews
+FROM pageviews pv
+WHERE pv.ts >= :start
+GROUP BY 1
+ORDER BY 1;`,
+  referrers: `SELECT COALESCE(NULLIF(s.referrer, ''), '$direct') AS referrer,
+       count(DISTINCT s.visitor_id)              AS visitors
+FROM sessions s
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;`,
+  survey: `SELECT option, count(*) AS n
+FROM onboarding_survey_responses
+GROUP BY 1
+ORDER BY 2 DESC;`,
+  buzz: `SELECT date_trunc('day', m.created_at)          AS period,
+       count(*)                                  AS count
+FROM mentions m
+WHERE m.created_at >= :start
+GROUP BY 1
+ORDER BY 1;`,
+};
+
 const ICP = ["A", "B", "C", "Unscored"] as const;
 const ICP_SHARE: Record<string, number> = { A: 0.08, B: 0.17, C: 0.3, Unscored: 0.45 };
 const ICP_CONV: Record<string, number> = { A: 2.2, B: 1.4, C: 0.7, Unscored: 0.35 };
