@@ -60,16 +60,28 @@ WHERE event = '$pageview'
   AND timestamp >= {filters.dateRange.from}
 GROUP BY period
 ORDER BY period`,
-  referrers: `SELECT COALESCE(NULLIF(s.referrer, ''), '$direct') AS referrer,
-       count(DISTINCT s.visitor_id)              AS visitors
-FROM sessions s
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 10;`,
-  survey: `SELECT option, count(*) AS n
-FROM onboarding_survey_responses
-GROUP BY 1
-ORDER BY 2 DESC;`,
+  // PostHog HogQL — top referring domains from $pageview autocapture.
+  // $referring_domain is set automatically on pageviews. https://posthog.com/docs/hogql
+  referrers: `SELECT
+    properties.$referring_domain AS referrer,
+    uniq(person_id)              AS visitors
+FROM events
+WHERE event = '$pageview'
+  AND timestamp >= {filters.dateRange.from}
+GROUP BY referrer
+ORDER BY visitors DESC
+LIMIT 10`,
+  // PostHog HogQL — onboarding survey (multi-select). getSurveyResponse() returns
+  // the answer array; arrayJoin expands it to one row per option.
+  // https://posthog.com/docs/surveys/viewing-results
+  survey: `SELECT
+    arrayJoin(getSurveyResponse(0, NULL, true)) AS option,
+    count()                                     AS n
+FROM events
+WHERE event = 'survey sent'
+  AND properties.$survey_name = 'What are you building?'
+GROUP BY option
+ORDER BY n DESC`,
   buzz: `SELECT date_trunc('day', m.created_at)          AS period,
        count(*)                                  AS count
 FROM mentions m
