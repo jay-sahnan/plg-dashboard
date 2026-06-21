@@ -160,7 +160,9 @@ export function ConversionChart() {
                     <Line key={t} type="monotone" dataKey={t} name={t} stroke={ICP_COLORS[t]} strokeWidth={2.5} dot={{ r: 2 }} />
                   ))
                 ) : (
-                  <Line type="monotone" dataKey={mkey} name={seriesName} stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey={mkey} name={seriesName} stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 3 }}>
+                    <LabelList dataKey={mkey} position="top" offset={10} formatter={pctLabel} style={{ fontSize: 11, fill: "var(--color-text-secondary)", fontWeight: 500 }} />
+                  </Line>
                 )}
               </LineChart>
             ) : (
