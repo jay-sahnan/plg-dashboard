@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { useFilters } from "@/components/DashboardFilters";
 import { useMetrics } from "@/lib/hooks/useMetrics";
@@ -17,7 +18,7 @@ const label = (r: string) => (r === "$direct" ? "Direct / none" : r.replace(/^ww
 
 export function ReferrersChart() {
   const { start, version } = useFilters();
-  const { rows, error } = useMetrics<Row>(`/api/web?metric=referrers&start=${start}`, version);
+  const { rows, error, meta } = useMetrics<Row>(`/api/web?metric=referrers&start=${start}`, version);
 
   const data = useMemo<Row[]>(
     () => (rows ?? []).map((r) => ({ referrer: label(r.referrer), visitors: r.visitors })),
@@ -25,7 +26,7 @@ export function ReferrersChart() {
   );
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Top referrers"
         subtitle="Unique visitors by referring domain, over the selected period — where traffic comes from"
@@ -47,6 +48,6 @@ export function ReferrersChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

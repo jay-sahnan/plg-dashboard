@@ -16,7 +16,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { ICP_COLORS, ICP_TIERS, ChartType, ChartTypeToggle, currentBucketStart, fmtPeriod, goalAwareLabel, useDragSelect, usePulse } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
@@ -65,7 +66,7 @@ export function ActivationChart() {
   const metricLabel = `${sessLabel} ≤ ${timeLabel}`;
   const tiers = ICP_TIERS.filter((t) => icp.includes(t));
   const pulse = usePulse(`${field}|${icp.join(",")}|${icpBreakdown}|${excludeCurrent}|${start}|${grain}|${version}`);
-  const { rows: raw, error } = useMetrics<Row>(
+  const { rows: raw, error, meta } = useMetrics<Row>(
     `/api/metrics?section=engagement&start=${start}&grain=${grain}`,
     version,
   );
@@ -129,7 +130,7 @@ export function ActivationChart() {
   ) : null;
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Activation & engagement"
         subtitle={subtitle}
@@ -192,6 +193,6 @@ export function ActivationChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

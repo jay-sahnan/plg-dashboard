@@ -16,7 +16,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { ICP_COLORS, ICP_TIERS, ChartType, ChartTypeToggle, currentBucketStart, fmtPeriod, goalAwareLabel, useDragSelect, usePulse } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
@@ -44,7 +45,7 @@ export function ChurnChart() {
   } = useFilters();
   const [type, setType] = useState<ChartType>("bar");
   const pulse = usePulse(`${icp.join(",")}|${icpBreakdown}|${excludeCurrent}|${start}|${grain}|${version}`);
-  const { rows: raw, error } = useMetrics<Row>(
+  const { rows: raw, error, meta } = useMetrics<Row>(
     `/api/metrics?section=churn&start=${start}&grain=${grain}`,
     version,
   );
@@ -96,7 +97,7 @@ export function ChurnChart() {
   ) : null;
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Churn"
         subtitle={
@@ -144,6 +145,6 @@ export function ChurnChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

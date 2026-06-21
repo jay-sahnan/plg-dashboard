@@ -15,7 +15,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import {
   ICP_COLORS,
@@ -55,7 +56,7 @@ export function SignupsChart() {
   } = useFilters();
   const [type, setType] = useState<ChartType>("bar");
   const pulse = usePulse(`${icp.join(",")}|${excludeCurrent}|${start}|${grain}|${version}`);
-  const { rows: raw, error } = useMetrics<Row>(
+  const { rows: raw, error, meta } = useMetrics<Row>(
     `/api/metrics?section=signups&start=${start}&grain=${grain}`,
     version,
   );
@@ -90,7 +91,7 @@ export function SignupsChart() {
   ) : null;
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Signups"
         subtitle={
@@ -154,6 +155,6 @@ export function SignupsChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

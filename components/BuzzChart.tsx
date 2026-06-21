@@ -12,7 +12,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { ChartType, ChartTypeToggle } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
@@ -34,7 +35,7 @@ const fmtDay = (period: string) => {
 
 export function BuzzChart() {
   const { start, version } = useFilters();
-  const { rows, error } = useMetrics<Row>(`/api/social?metric=buzz&start=${start}`, version);
+  const { rows, error, meta } = useMetrics<Row>(`/api/social?metric=buzz&start=${start}`, version);
   const [type, setType] = useState<ChartType>("bar");
 
   const data = useMemo<Datum[]>(
@@ -52,7 +53,7 @@ export function BuzzChart() {
   );
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Social buzz"
         subtitle="Brand mentions/day across X, Reddit, HN, Bluesky, LinkedIn"
@@ -79,6 +80,6 @@ export function BuzzChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

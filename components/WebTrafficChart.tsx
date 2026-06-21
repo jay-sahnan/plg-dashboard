@@ -14,7 +14,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { ChartType, ChartTypeToggle, currentBucketStart, fmtPeriod, useDragSelect } from "@/components/ChartControls";
 import { useFilters } from "@/components/DashboardFilters";
@@ -30,7 +31,7 @@ const kfmt = (v: unknown) => {
 
 export function WebTrafficChart() {
   const { start, grain, excludeCurrent, version, goals, selectedRange, onSelectMonth, onSelectRange } = useFilters();
-  const { rows, error } = useMetrics<Row>(`/api/web?metric=traffic&start=${start}&grain=${grain}`, version);
+  const { rows, error, meta } = useMetrics<Row>(`/api/web?metric=traffic&start=${start}&grain=${grain}`, version);
   const [type, setType] = useState<ChartType>("line");
 
   const data = useMemo<Datum[]>(() => {
@@ -58,7 +59,7 @@ export function WebTrafficChart() {
   ) : null;
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Web traffic"
         subtitle="Unique visitors & pageviews on your site. Switch to Week to see the launch spike."
@@ -91,6 +92,6 @@ export function WebTrafficChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }

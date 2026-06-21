@@ -1,7 +1,8 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { CardHeader } from "@/components/ui/Card";
+import { ProvenanceCard } from "@/components/ui/ProvenanceCard";
 import { ChartMsg } from "@/components/ChartMessage";
 import { useFilters } from "@/components/DashboardFilters";
 import { useMetrics } from "@/lib/hooks/useMetrics";
@@ -15,11 +16,11 @@ const kfmt = (v: unknown) => {
 
 export function OnboardingSurveyChart() {
   const { start, version } = useFilters();
-  const { rows, error } = useMetrics<Row>(`/api/web?metric=survey&start=${start}`, version);
+  const { rows, error, meta } = useMetrics<Row>(`/api/web?metric=survey&start=${start}`, version);
   const data = rows ?? [];
 
   return (
-    <Card>
+    <ProvenanceCard meta={meta}>
       <CardHeader
         title="Onboarding survey"
         subtitle="“What are you building?” responses (multi-select) — self-reported use case at signup"
@@ -43,6 +44,6 @@ export function OnboardingSurveyChart() {
           </ResponsiveContainer>
         )}
       </div>
-    </Card>
+    </ProvenanceCard>
   );
 }
